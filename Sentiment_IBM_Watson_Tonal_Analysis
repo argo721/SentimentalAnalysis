@@ -1,0 +1,68 @@
+#Code to run sentiment analysis on IBM watson.
+#IBM watson has sentence and document analysis
+#The following code shall take an excel sheet with texts to run tonal analysis and update the tone of the complete text along with sentence split
+import json
+from collections import namedtuple
+
+import pandas as pd
+from ibm_watson import ToneAnalyzerV3
+from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
+from ibm_watson import ApiException
+import openpyxl
+import os
+
+apiKey = 'ZwTtC_lHyh13vN1sIXhnWeIondMSApAYigiATmUVcrAp'
+apiVersion = '2017-09-21'
+url = 'https://api.us-south.tone-analyzer.watson.cloud.ibm.com/instances/50d03668-d6b7-485c-aa90-90544447b0e8/v3/tone?version=2017-09-21'
+
+authenticator = IAMAuthenticator(apiKey)
+tone_analyzer = ToneAnalyzerV3(
+    version=apiVersion,
+    authenticator=authenticator
+)
+
+tone_analyzer.set_service_url(url)
+
+def tonal_analysis(text):
+    try:
+        #Invoke a Tone Analyzer method
+        # text = 'Team, I know that times are tough! Product ' \
+        #        'sales have been disappointing for the past three ' \
+        #        'quarters. We have a competitive product, but we ' \
+        #        'need to do a better job of selling it!'
+
+        tone_analysis = tone_analyzer.tone(
+            {'text': text},
+            content_type='application/json'
+        ).get_result()
+        print(json.dumps(tone_analysis, indent=2))
+        return json.dumps(tone_analysis, indent=2)
+    except ApiException as ex:
+        print("Method failed with status code " + str(ex.code) + ": " + ex.message)
+
+excel_file_path = "SentimentAnalysis_Lessons_IBM_Tones.xlsx"
+
+sentiment_df = pd.read_excel(excel_file_path)
+print(sentiment_df.head())
+print(len(sentiment_df.Actual_Text))
+
+sentimental_excel = openpyxl.open(excel_file_path)
+sheet = sentimental_excel.active
+
+
+for rownum in range(len(sentiment_df.Actual_Text)):
+    print(sentiment_df.Actual_Text[rownum])
+    print(len(sentiment_df.Actual_Text[rownum]))
+
+    tone = tonal_analysis(sentiment_df.Actual_Text[rownum])
+    obj_tone = json.loads(tone, object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
+    doc_tones = obj_tone.document_tone.tones
+
+    for docTone in range(len(doc_tones)):
+        sheet.cell(row=rownum+2, column=5+(docTone*2)).value = doc_tones[docTone].score
+        sheet.cell(row=rownum+2, column=6+(docTone*2)).value = doc_tones[docTone].tone_name
+        # len_arr += [len(sentiment_df.Actual_Text[i])]
+        # mag_arr += [sentiment.magnitude]
+
+
+sentimental_excel.save(excel_file_path)
