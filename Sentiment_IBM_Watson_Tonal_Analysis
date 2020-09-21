@@ -11,9 +11,9 @@ from ibm_watson import ApiException
 import openpyxl
 import os
 
-apiKey = 'ZwTtC_lHyh13vN1sIXhnWeIondMSApAYigiATmUVcrAp'
+apiKey = 'apiKey'
 apiVersion = '2017-09-21'
-url = 'https://api.us-south.tone-analyzer.watson.cloud.ibm.com/instances/50d03668-d6b7-485c-aa90-90544447b0e8/v3/tone?version=2017-09-21'
+url = 'url'
 
 authenticator = IAMAuthenticator(apiKey)
 tone_analyzer = ToneAnalyzerV3(
